@@ -1,53 +1,76 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Processar requisicao</title>
+    <title>Cadastrar Requisição</title>
+    <style>
+        a#linkweb {
+            color: black;
+            text-decoration: none;
+        }
+
+        footer {
+            text-align: center;
+        }
+
+        a#homelink {
+            float: right;
+        }
+
+        a#nv {
+            float: right;
+        }
+    </style>
 </head>
+
 <body>
     <header>
-        <?php
-            include 'inc/cabecalho.inc.html';
-        ?>
+        <?php include('inc/cabecalho.inc.php'); ?>
     </header>
     <main>
-        <p><a href="index.php">Home</a></p>
+        <h1>Registro de Requisição</h1>
         <?php
-            if(isset($_GET['setor']) && isset($_GET['descricao']) && isset($_GET['urgente'])){
-                $setor = $_GET['setor'];
-                $descricao = $_GET['descricao'];
-                $urgente = $_GET['urgente'];
+        require_once 'class/rb.php';
+        include('inc/conexaobd.inc.php');
 
-                include_once 'class/rb.php';
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 
-                R::setup('mysql:host=127.0.0.1;dbname=requisicao;port=3307', 'root', '');
+            $setor = filter_input(INPUT_GET, 'setor', FILTER_SANITIZE_STRING);
+            $descricao = filter_input(INPUT_GET, 'descricao', FILTER_SANITIZE_STRING);
+            $urgente = isset($_GET['urgente']) ? 1 : 0;
 
-                $dado = R::dispense('dados');
-                $dado->setor = $setor;
-                $dado->descricao = $descricao;
-                $dado->urgente = $urgente;
-
-                R::store($dado);
-                
-                R::close();
-
-                echo '<p>Requisição registrada com sucesso! [ID = '. $dado->id. ']</p>';
-
-
-
-
-            } else{
-                echo '<p>Não foi possível cadastrar.</p>';
+            if (empty($setor) || empty($descricao)) {
+                echo '<p>Por favor, preencha todos os campos obrigatórios.</p>';
+                exit;
             }
+
+            try {
+
+                $requisicao = R::dispense('requisicoes');
+                $requisicao->setor = $setor;
+                $requisicao->descricao = $descricao;
+                $requisicao->urgente = $urgente;
+
+
+                $id = R::store($requisicao);
+
+                echo "<p>Requisição cadastrada com sucesso! [ ID = $id ]</p>";
+            } catch (Exception $e) {
+                echo "<p>Erro ao cadastrar requisição: " . $e->getMessage() . "</p>";
+            }
+        } else {
+            echo '<p>Método inválido. Utilize o formulário para enviar os dados.</p>';
+        }
+
+        R::close();
         ?>
-        <p><a href="requisicao.php">Nova requisição</a></p>
+        <a href="requisicao.php" id="nv">Nova requisição</a><br>
     </main>
     <footer>
-        <?php
-            include 'inc/rodape.inc.html';
-        ?>
+        <?php include('inc/rodape.inc.php'); ?>
     </footer>
-    
 </body>
+
 </html>
